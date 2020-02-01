@@ -1,4 +1,7 @@
 *.zip
+*.RData
+*.Rapp.history
+*.Rhistory
 *.csv
 *.txt
 data/*
