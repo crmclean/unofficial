@@ -1,6 +1,8 @@
 #!/usr/local/bin/Rscript
 
-curFiles <- file.path("cur_files", list.files("cur_files/"))
+setwd("~/Documents/unofficial/gov_spending/data/2020-01-31/FY2020_All_Assistance_Full_20200110/")
+curFiles <- "FY2020_All_Assistance_Full_20200111_4.csv"
+#curFiles <- file.path("cur_files", list.files("cur_files/"))
 yearData <- sub("_All.*", "", basename(curFiles))[1]
 
 allFunding <- list()
@@ -10,6 +12,7 @@ for(i in seq_along(curFiles)) {
 	
 	## agencies donating the money
 	## awarding_agency_name
+	head(curFile)
 	
 	## money money money
 	## total_funding_amount
