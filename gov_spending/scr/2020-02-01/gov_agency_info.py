@@ -4,10 +4,12 @@ import requests
 import json
 import re
 
+## python3 script used to gather information to link agencies and AID numbers
+
 endpoint = "https://api.usaspending.gov/api/v2/references/agency/"
 
 ## outer for loop - used to enter different agency codes to api 
-for i in list(range(182,184)):
+for i in list(range(0,1500)):
     
     #print(endpoint + str(i))
 
