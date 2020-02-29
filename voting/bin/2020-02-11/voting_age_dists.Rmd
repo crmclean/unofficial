@@ -1,0 +1,155 @@
+---
+title: "Voting Age Distribution"
+author: "Craig McLean"
+date: "2/11/2020"
+output: html_document
+---
+
+# Aim:
+
+## Organizing data
+
+I'd like to describe how people vote by distinct age demographics during the 2016 election.
+
+All data was gathered from https://www.census.gov/data/tables/time-series/demo/voting-and-registration/p20-580.html
+
+```{r}
+votingCounts <- read.csv("../../data/2020-02-11/2016_election_voting_age_counts.csv", stringsAsFactors = F)
+
+## converting voting numbers into numerics
+votingCounts[,3:ncol(votingCounts)] <- apply(votingCounts[,3:ncol(votingCounts)],2,function(col) {
+    as.numeric(gsub(",", "", col))
+})
+
+votingCounts$Age <- as.integer(sub(" years.*", "", votingCounts$Age))
+votingCounts$Age[is.na(votingCounts$Age)] <- 80
+votingCounts <- votingCounts[votingCounts$Age < 80,]
+```
+
+## Voting Registration
+
+### Percent Registration
+
+Making some plots to describe how numbers change within the data
+
+```{r plot percent voting}
+dotType <- as.factor(votingCounts$Sex)
+
+png(filename = "../../results/2020-02-11/percent_registration_age.png",
+    width = 8, height = 6.5, units = "in", res = 300)
+plot(x = votingCounts$Age, y = votingCounts$Percent.Registered, ylim = c(0,100), 
+     ylab = "Percent of Age Group Registered to Vote",
+     xlab = "Age", 
+     main = "Percent Voting Registration Across Age Groups",
+     pch = c(1,2)[dotType])
+points(x = votingCounts$Age, y = votingCounts$percent.not.registered, 
+       col = "red",
+       pch = c(1,2)[dotType])
+legend("topleft", legend = c("Male","Female"), 
+       pch = c(1,2,22,22), horiz = T)
+legend("topright", legend = c("Registerd", "Not Registered"),
+       horiz = T,
+       fill = c("black","red"))
+dev.off()
+```
+
+### Total Voted
+
+```{r}
+dotType <- as.factor(votingCounts$Sex)
+
+png(filename = "../../results/2020-02-11/total_registration_age.png",
+    width = 8, height = 6.5, units = "in", res = 300)
+plot(x = votingCounts$Age, y = votingCounts$Number.voted, 
+     ylim = c(0,4000), 
+     ylab = "Total Population of Age Group Registered to Vote",
+     xlab = "Age", 
+     main = "Total Voting Participation by the Numbers",
+     pch = c(1,2)[dotType])
+legend("topleft", legend = c("Male","Female"), 
+       pch = c(1,2,22,22), horiz = T)
+legend("topright", legend = c("Registerd", "Not Registered"),
+       horiz = T,
+       fill = c("black","red"))
+dev.off()
+
+sum(votingCounts$Number.voted[votingCounts$Sex == "MALE"])
+sum(votingCounts$Number.voted[votingCounts$Sex == "FEMALE"])
+```
+
+
+```{r}
+library(ggplot2)
+
+votingCounts <- votingCounts[votingCounts$Age <= 65,]
+
+ggplot(data = votingCounts[votingCounts$Sex == "FEMALE",], 
+       aes(x=Age))+
+  geom_bar(aes(y=votingCounts$Number.voted[votingCounts$Sex == "FEMALE"]),
+           stat="identity",position ="identity",alpha=.8,fill='pink',color='red') +
+    geom_bar(aes(y=votingCounts$Number.voted[votingCounts$Sex == "MALE"]),
+           stat="identity",position ="identity",alpha=.3,fill='lightblue',color='lightblue4') +
+    theme_minimal() +
+    ggtitle(label = "2016 US Presidential Election Voters by Gender and Age") +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_text(angle = 0, hjust = 1),
+          axis.title.y.left = element_text(angle = 0, hjust = 1, vjust = .5,)) +
+    labs(y = "Total Voters\n (Thousand)")
+ggsave(filename = "../../results/2020-02-29/voting_counts_by_gender.png",
+       width = 8, height = 4, units = "in", dpi = 300)
+
+```
+
+```{r}
+library(ggplot2)
+
+votingCounts <- votingCounts[votingCounts$Age <= 65,]
+
+ggplot(data = votingCounts[votingCounts$Sex == "FEMALE",], 
+       aes(x=Age))+
+  geom_bar(aes(y=votingCounts$number.not.voted[votingCounts$Sex == "FEMALE"]),
+           stat="identity",position ="identity",alpha=.8,fill='pink',color='red') +
+    geom_bar(aes(y=votingCounts$number.not.voted[votingCounts$Sex == "MALE"]),
+           stat="identity",position ="identity",alpha=.3,fill='lightblue',color='lightblue4') +
+    theme_minimal() +
+    ggtitle(label = "2016 US Presidential Election Voters by Gender and Age") +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_text(angle = 0, hjust = 1),
+          axis.title.y.left = element_text(angle = 0, hjust = 1, vjust = .5,)) +
+    labs(y = "Total Voters\n (Thousand)")
+ggsave(filename = "../../results/2020-02-29/voting_counts_by_gender.png",
+       width = 8, height = 4, units = "in", dpi = 300)
+
+```
+
+
+```{r}
+ageDb <- Reduce(split(votingCounts$Number.voted, f = votingCounts$Age),f = cbind)
+rownames(ageDb) <- c("MALE", "FEMALE")
+colnames(ageDb) <- 18:65
+
+cols <- c("red","blue")
+
+png(filename = "../../results/2020-02-29/total_registration_age_bar.png",
+    width = 12, height = 5.5, units = "in", res = 300)
+par(las = 1, mar = c(5, 8, 4, 4) + 0.1)
+barplot(as.matrix(ageDb), 
+        main="2016 US Presidential Election Voters by Gender and Age", 
+        ylab = NA, cex.main = 1.4,
+        yaxt='n',
+        beside=TRUE, 
+        col=cols, xlab = "Age")
+axis(side = 2, 
+     at= seq(0, 1400, length.out = 8), 
+     labels = seq(0, 1.4, length.out = 8), 
+     #pos=, 
+     #lty=, 
+     #col=, 
+     las=2, 
+     #tck=, ...
+     )
+mtext(side = 2,text = "Total Voters\n (Millions)  ", line = 3)
+legend("topleft", legend = c("Male", "Female"),fill = c("red","blue"), bty = "n")
+dev.off()
+```
+

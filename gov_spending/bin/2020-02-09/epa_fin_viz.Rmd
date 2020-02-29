@@ -1,0 +1,86 @@
+---
+title: "Visualize EPA Finances"
+author: "Craig McLean"
+date: "2/9/2020"
+output: html_document
+---
+
+## Overview
+
+This file is designed to visualize the dynamics of EPA grant spending over time.
+
+```{r}
+epaFin <- read.csv("../../data/2020-02-09/EPA_summarized_data.csv",
+                   stringsAsFactors = F)
+annualSpending <- read.csv("../../data/2020-02-09/total_an_budget_integrated.csv", 
+                           stringsAsFactors = F)
+```
+
+## Question: how has financing changed over time?
+
+```{r}
+yearFunds <- epaFin[,grep(pattern = "20", colnames(epaFin))]
+plot(colSums(yearFunds), 
+     type = "h", 
+     main = "EPA spending over time", 
+     x = 2012:2020, ylab = "Grant Funding (USD)")
+```
+
+## what does this look like when you normalize by the total spent by the gov
+
+```{r}
+curYears <- annualSpending[annualSpending$year > 2011,]
+plot(colSums(yearFunds)/(curYears$totalFunds*10E6), 
+     type = "h", 
+     main = "EPA spending over time", 
+     x = 2012:2020, ylab = "Grant Funding (USD)")
+```
+
+## 
+
+```{r}
+epaPrograms <- unique(epaFin$desc)
+
+progCor <- list()
+span <- 2012:2019
+for(i in seq_along(epaPrograms)) {
+    
+    curFin <- epaFin[epaFin$desc == epaPrograms[i],]
+    classExpenses <- colSums(curFin[,colnames(curFin) %in% colnames(yearFunds)])
+    classExpenses <- classExpenses[-length(classExpenses)]/curYears$totalFunds
+    progCor[[i]] <- summary(lm(classExpenses ~ span))
+    
+}
+
+modelSlope <- sapply(progCor, function(x) {
+    x$coefficients[2,1]
+})
+
+png(filename = "../../results/2020-02-09/EPA_program_funding_dynamics.png",
+    width = 7, height = 5,units = "in",res = 300)
+barplot(sort(modelSlope), main = "Change in EPA Funding of Federal Program\n 2012-2019")
+dev.off()
+
+epaPrograms[which.max(modelSlope)]
+
+barplot(sort(modelSlope[grep("WATER",epaPrograms)]))
+epaPrograms[order(modelSlope)][1:10]
+
+waterFilters <- grep("WATER",epaPrograms)
+epaPrograms[waterFilters]
+
+waterFunds <- epaFin[epaFin$desc %in% epaPrograms,]
+plot(y = colSums(waterFunds[,grep(pattern = "20[0-9]", x = colnames(waterFunds))])/curYears$totalFunds,
+     x = 2012:2020)
+
+
+for(i in seq_along(waterFilters)) {
+    
+    
+    plot(x = 2012:2019, y = )
+    epaPrograms[waterFilters[i]]
+}
+
+```
+
+
